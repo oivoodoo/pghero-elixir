@@ -1,6 +1,12 @@
 defmodule PgHeroWeb.AssetController do
   use PgHeroWeb, :controller
 
+  plug :skip_csrf
+
+  defp skip_csrf(conn, _opts) do
+    Plug.Conn.put_private(conn, :plug_skip_csrf_protection, true)
+  end
+
   @assets %{
     "application.css" => "text/css",
     "application.js" => "text/javascript",

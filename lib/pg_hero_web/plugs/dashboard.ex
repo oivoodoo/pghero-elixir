@@ -8,17 +8,24 @@ defmodule PgHeroWeb.Plugs.Dashboard do
   def call(conn, opts) do
     mount_path = normalize_path(opts[:mount_path] || "/pghero")
 
-    conn
-    |> assign(:pghero_prefix, mount_path)
-    |> maybe_basic_auth(opts)
-    |> maybe_override_csp()
-    |> assign_databases()
-    |> assign_current_database()
-    |> maybe_halt()
-    |> maybe_redirect_multi_db()
-    |> check_server_version()
-    |> assign_flags()
+    conn = assign(conn, :pghero_prefix, mount_path)
+
+    if asset_request?(conn) do
+      Plug.Conn.put_private(conn, :plug_skip_csrf_protection, true)
+    else
+      conn
+      |> maybe_basic_auth(opts)
+      |> maybe_override_csp()
+      |> assign_databases()
+      |> assign_current_database()
+      |> maybe_halt()
+      |> maybe_redirect_multi_db()
+      |> check_server_version()
+      |> assign_flags()
+    end
   end
+
+  defp asset_request?(conn), do: "assets" in conn.path_info
 
   defp maybe_basic_auth(conn, opts) do
     username = opts[:username] || PgHero.config().username

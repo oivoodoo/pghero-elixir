@@ -542,7 +542,7 @@ defmodule PgHeroWeb.HomeController do
 
     opts = if generic_plan, do: Map.put(opts, :generic_plan, true), else: opts
 
-    if opts[:analyze] and not analyze_enabled? do
+    if opts[:analyze] == true and not analyze_enabled? do
       {nil, nil, false, "Explain analyze not enabled"}
     else
       explanation = Database.explain(database, query, Enum.to_list(opts))
@@ -598,7 +598,7 @@ defmodule PgHeroWeb.HomeController do
     |> Enum.group_by(fn conn -> Map.take(conn, keys) end)
     |> Enum.map(fn {k, v} -> Map.put(k, :total_connections, length(v)) end)
     |> Enum.sort_by(fn v ->
-      [-v[:total_connections] | Enum.map(keys, fn k -> to_string(v[k]) end)]
+      [-v[:total_connections] | Enum.map(keys, fn k -> stringify(v[k]) end)]
     end)
   end
 
@@ -642,6 +642,12 @@ defmodule PgHeroWeb.HomeController do
     e ->
       if PgHero.Query.timeout_error?(e), do: {default, true}, else: reraise(e, __STACKTRACE__)
   end
+
+  defp stringify(nil), do: ""
+  defp stringify(value) when is_binary(value), do: value
+  defp stringify(value) when is_atom(value), do: Atom.to_string(value)
+  defp stringify(value) when is_integer(value) or is_float(value), do: to_string(value)
+  defp stringify(value), do: inspect(value)
 
   defp present?(nil), do: false
   defp present?(""), do: false

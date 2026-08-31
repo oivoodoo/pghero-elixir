@@ -21,8 +21,23 @@ defmodule PgHero.ConfigTest do
     Application.delete_env(:pghero, :repo)
     Application.delete_env(:pghero, :url)
     Application.delete_env(:pghero, :databases)
+    System.delete_env("DATABASE_URL")
+    System.delete_env("PGHERO_DATABASE_URL")
 
     assert PgHero.Config.get().databases == %{}
+  end
+
+  test "builds a database from DATABASE_URL" do
+    Application.delete_env(:pghero, :repo)
+    Application.delete_env(:pghero, :url)
+    Application.delete_env(:pghero, :databases)
+    System.put_env("DATABASE_URL", "postgres://app:secret@db.internal:5432/app_prod")
+
+    on_exit(fn -> System.delete_env("DATABASE_URL") end)
+
+    assert %{primary: cfg} = PgHero.Config.get().databases
+    assert cfg[:url] == "postgres://app:secret@db.internal:5432/app_prod"
+    assert cfg[:id] == "primary"
   end
 
   test "builds a single database from repo" do

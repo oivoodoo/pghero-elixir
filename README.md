@@ -1,10 +1,25 @@
 # PgHero
 
-A performance dashboard for Postgres, as a **Phoenix library**. Mount it on a route in any Elixir/Phoenix app.
+A performance dashboard for Postgres, as a **Phoenix library** or a **Docker image**.
 
 This is an Elixir port of [ankane/pghero](https://github.com/ankane/pghero) 4.x.
 
-## Installation
+## Docker
+
+```sh
+docker build -t pghero .
+docker run --rm -ti -e DATABASE_URL=postgres://user:password@hostname:5432/dbname -p 8080:8080 pghero
+```
+
+Then visit [http://localhost:8080](http://localhost:8080). See [guides/Docker.md](guides/Docker.md) for auth, host-machine databases, and stats capture.
+
+Without Docker:
+
+```sh
+DATABASE_URL=postgres://user:pass@localhost/dbname mix pghero.server
+```
+
+## Installation (Phoenix)
 
 Add to `mix.exs`:
 
@@ -35,6 +50,19 @@ end
 ```
 
 Then open `/pghero`.
+
+## Dummy app
+
+A host Phoenix app lives in `dummy/` so you can see the mount without wiring your own project:
+
+```sh
+cd dummy
+docker compose up -d
+mix setup
+mix phx.server
+```
+
+Then open [http://localhost:4000/pghero](http://localhost:4000/pghero).
 
 ## Authentication
 

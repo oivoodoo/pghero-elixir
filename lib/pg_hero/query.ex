@@ -176,6 +176,10 @@ defmodule PgHero.Query do
     months * 30 * 86_400 + days * 86_400 + secs + micro / 1_000_000
   end
 
+  defp normalize(%Postgrex.INET{address: address}) do
+    address |> :inet.ntoa() |> List.to_string()
+  end
+
   defp normalize(other), do: other
 
   defp int!(n) when is_integer(n), do: n

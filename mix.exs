@@ -18,15 +18,23 @@ defmodule PgHero.MixProject do
       homepage_url: @source_url,
       docs: docs(),
       aliases: aliases(),
-      test_coverage: [tool: ExCoveralls],
-      preferred_cli_env: [coveralls: :test]
+      releases: releases()
     ]
   end
 
   def application do
     [
-      extra_applications: [:logger, :inets],
+      extra_applications: [:logger, :runtime_tools, :inets, :crypto],
       mod: {PgHero.Application, []}
+    ]
+  end
+
+  defp releases do
+    [
+      pghero: [
+        include_executables_for: [:unix],
+        applications: [runtime_tools: :permanent]
+      ]
     ]
   end
 
@@ -42,6 +50,7 @@ defmodule PgHero.MixProject do
       {:jason, "~> 1.4"},
       {:postgrex, "~> 0.17"},
       {:ecto_sql, "~> 3.11"},
+      {:bandit, "~> 1.5"},
       {:plug_cowboy, "~> 2.6", only: :test},
       {:ex_doc, "~> 0.34", only: :dev, runtime: false}
     ]

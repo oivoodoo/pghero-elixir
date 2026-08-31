@@ -5,13 +5,9 @@
 /.fetch
 erl_crash.dump
 *.ez
-pghero-*.tar
+dummy-*.tar
 /tmp/
 .elixir_ls/
 .lexical/
 *.beam
-/config/*.secret.exs
 .DS_Store
-/dummy/_build/
-/dummy/deps/
-/dummy/.elixir_ls/

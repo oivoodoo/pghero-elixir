@@ -105,7 +105,7 @@ defmodule PgHero.Config do
       repo = app[:repo] ->
         %{primary: normalize_database({:primary, [repo: repo]})}
 
-      url = app[:url] || System.get_env("PGHERO_DATABASE_URL") ->
+      url = app[:url] || System.get_env("PGHERO_DATABASE_URL") || System.get_env("DATABASE_URL") ->
         %{primary: normalize_database({:primary, [url: url]})}
 
       true ->

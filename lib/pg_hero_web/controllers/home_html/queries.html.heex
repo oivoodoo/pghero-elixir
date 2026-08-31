@@ -41,7 +41,15 @@
             </p>
           </div>
         <% end %>
-        <.queries_table queries={@query_stats} conn={@conn} sort_headers={true} />
+        <.queries_table
+          queries={@query_stats}
+          conn={@conn}
+          sort_headers={true}
+          link_options={@link_options}
+          user={@user}
+          link_user={@link_user}
+          show_details={@show_details}
+        />
         <script>
           highlightQueries();
         </script>

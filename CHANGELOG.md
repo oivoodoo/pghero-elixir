@@ -9,5 +9,6 @@ Elixir/Phoenix port of [PgHero](https://github.com/ankane/pghero) 4.0.1.
 - Overview, queries, space, connections, live queries, maintenance, explain, and tune
 - Optional historical query/space stats via `PgHero.Migrations`
 - Optional HTTP basic auth
+- Standalone server and Docker image (`DATABASE_URL` + port 8080)
 
 Not ported yet: suggested indexes (`pg_query`), AWS/GCP system charts.

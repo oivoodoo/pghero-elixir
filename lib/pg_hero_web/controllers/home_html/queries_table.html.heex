@@ -9,7 +9,7 @@
                 pg_path(
                   @conn,
                   "queries",
-                  Map.merge(@link_options || %{}, %{sort: nil, user: @user})
+                  Map.merge(assigns[:link_options] || %{}, %{sort: nil, user: assigns[:user]})
                 )
               }
               data-sort=""
@@ -25,7 +25,10 @@
                 pg_path(
                   @conn,
                   "queries",
-                  Map.merge(@link_options || %{}, %{sort: "average_time", user: @user})
+                  Map.merge(assigns[:link_options] || %{}, %{
+                    sort: "average_time",
+                    user: assigns[:user]
+                  })
                 )
               }
               data-sort="average_time"
@@ -41,7 +44,7 @@
                 pg_path(
                   @conn,
                   "queries",
-                  Map.merge(@link_options || %{}, %{sort: "calls", user: @user})
+                  Map.merge(assigns[:link_options] || %{}, %{sort: "calls", user: assigns[:user]})
                 )
               }
               data-sort="calls"
@@ -89,7 +92,7 @@
                   pg_path(
                     @conn,
                     "queries",
-                    Map.merge(@link_options || %{}, %{user: query[:user]})
+                    Map.merge(assigns[:link_options] || %{}, %{user: query[:user]})
                   )
                 }>{query[:user]}</a>
               <% else %>
