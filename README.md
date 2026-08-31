@@ -26,8 +26,7 @@ Add to `mix.exs`:
 ```elixir
 def deps do
   [
-    {:pghero, path: "../pghero"}
-    # or once published: {:pghero, "~> 0.1.0"}
+    {:pghero, "~> 0.1.0"}
   ]
 end
 ```

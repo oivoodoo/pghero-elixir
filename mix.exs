@@ -2,7 +2,7 @@ defmodule PgHero.MixProject do
   use Mix.Project
 
   @version "0.1.0"
-  @source_url "https://github.com/ankane/pghero"
+  @source_url "https://github.com/oivoodoo/pghero-elixir"
 
   def project do
     [
@@ -13,7 +13,8 @@ defmodule PgHero.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       package: package(),
-      description: "A performance dashboard for Postgres, mountable in Phoenix",
+      description:
+        "A performance dashboard for Postgres. Elixir port of PgHero: mount it in Phoenix or run it standalone with Docker.",
       source_url: @source_url,
       homepage_url: @source_url,
       docs: docs(),
@@ -58,18 +59,22 @@ defmodule PgHero.MixProject do
 
   defp package do
     [
-      maintainers: ["Andrew Kane"],
+      name: "pghero",
       licenses: ["MIT"],
-      links: %{"GitHub" => @source_url},
-      files: ~w(lib priv mix.exs README.md LICENSE.txt CHANGELOG.md guides)
+      links: %{
+        "GitHub" => @source_url,
+        "Original Ruby PgHero" => "https://github.com/ankane/pghero"
+      },
+      files: ~w(lib priv .formatter.exs mix.exs README.md LICENSE.txt CHANGELOG.md guides)
     ]
   end
 
   defp docs do
     [
       main: "readme",
-      extras: ["README.md", "CHANGELOG.md"],
-      source_ref: "v#{@version}"
+      extras: ["README.md", "CHANGELOG.md", "guides/Phoenix.md", "guides/Docker.md"],
+      source_ref: "v#{@version}",
+      source_url: @source_url
     ]
   end
 
