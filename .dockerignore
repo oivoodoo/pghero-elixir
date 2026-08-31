@@ -1,0 +1,12 @@
+_build
+deps
+doc
+dummy
+.git
+.github
+.elixir_ls
+test
+erl_crash.dump
+*.ez
+.DS_Store
+tmp

@@ -24,6 +24,7 @@ defmodule Mix.Tasks.Pghero.Server do
     PgHero.Standalone.configure!()
 
     Mix.Task.run("app.start")
-    Mix.Tasks.Run.run(["--no-halt"])
+    Mix.shell().info("PgHero listening on http://localhost:#{System.get_env("PORT") || "8080"}")
+    Process.sleep(:infinity)
   end
 end
