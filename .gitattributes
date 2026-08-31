@@ -1,0 +1,2 @@
+priv/static/*.js linguist-vendored
+priv/static/Chart.bundle.js linguist-vendored

@@ -1,0 +1,55 @@
+<div class="content">
+  <%= if @query_stats_enabled && !@historical_query_stats_enabled && !PgHero.Database.query_stats_table_exists?(@database) do %>
+    <form action={pg_path(@conn, "reset_query_stats")} method="post" class="push-right">
+      <input :if={token = csrf_token(@conn)} type="hidden" name="_csrf_token" value={token} />
+      <button class="btn btn-danger" type="submit">Reset</button>
+    </form>
+  <% end %>
+
+  <%= if not @historical_query_stats_enabled do %>
+    <h1 class="push-left">Queries</h1>
+  <% end %>
+
+  <%= if @historical_query_stats_enabled do %>
+    <div id="slider-container">
+      <div id="slider"></div>
+      <div id="range-end"></div>
+      <div id="range-start"></div>
+    </div>
+    <script>
+      var sort = <%= js_value(@sort) %>;
+      var minAverageTime = <%= js_value(@min_average_time) %>;
+      var minCalls = <%= js_value(@min_calls) %>;
+      var user = <%= js_value(@user) %>;
+      var debug = <%= js_value(@debug) %>;
+      var startAt = <%= js_value(if @conn.params["start_at"] && @start_at, do: DateTime.to_unix(@start_at) * 1000) %>;
+      var endAt = <%= js_value(if @end_at, do: DateTime.to_unix(@end_at) * 1000) %>;
+      initSlider();
+    </script>
+  <% end %>
+
+  <%= if @query_stats_enabled do %>
+    <%= if @error do %>
+      <div class="alert alert-danger">Cannot understand start or end time.</div>
+    <% else %>
+      <%= if @query_stats != [] || @historical_query_stats_enabled do %>
+        <%= if @user do %>
+          <div class="clear-both">
+            <p>
+              Showing queries for <code>{@user}</code>
+              user. <a href={pg_path(@conn, "queries", @link_options)} id="show-all">Show all</a>
+            </p>
+          </div>
+        <% end %>
+        <.queries_table queries={@query_stats} conn={@conn} sort_headers={true} />
+        <script>
+          highlightQueries();
+        </script>
+      <% else %>
+        <p>Stats are not available yet. Come back soon!</p>
+      <% end %>
+    <% end %>
+  <% else %>
+    <p>Query stats are not enabled.</p>
+  <% end %>
+</div>

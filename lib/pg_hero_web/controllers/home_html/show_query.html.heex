@@ -1,0 +1,77 @@
+<div class="content">
+  <pre><code class="query-code language-pgsql"><%= @query %></code></pre>
+  <script>
+    highlightQueries();
+  </script>
+
+  <%= if @explain_enabled && @explainable_query do %>
+    <p>
+      <form action={pg_path(@conn, "explain")} method="post" target="_blank">
+        <input :if={token = csrf_token(@conn)} type="hidden" name="_csrf_token" value={token} />
+        <input type="hidden" name="query" value={@explainable_query} />
+        <button class="btn btn-info" type="submit">Explain</button>
+      </form>
+    </p>
+  <% end %>
+
+  <%= if @chart_data do %>
+    <h1>Total Time</h1>
+    <div id="chart-1" class="chart">Loading...</div>
+    <script>
+      new Chartkick.LineChart("chart-1", <%= js_value(@chart_data) %>, {colors: ["#5bc0de"], legend: false, suffix: " ms"});
+    </script>
+
+    <h1>Average Time</h1>
+    <div id="chart-2" class="chart">Loading...</div>
+    <script>
+      new Chartkick.LineChart("chart-2", <%= js_value(@chart2_data) %>, {colors: ["#5bc0de"], legend: false, suffix: " ms"});
+    </script>
+
+    <h1>Calls</h1>
+    <div id="chart-3" class="chart">Loading...</div>
+    <script>
+      new Chartkick.LineChart("chart-3", <%= js_value(@chart3_data) %>, {colors: ["#5bc0de"], legend: false});
+    </script>
+  <% else %>
+    <p>Enable historical query stats to see more details.</p>
+  <% end %>
+
+  <%= if @tables != [] do %>
+    <h1>Tables</h1>
+    <table>
+      <thead>
+        <tr>
+          <th class="width-25">Name</th>
+          <th class="width-25">Rows</th>
+          <th>Indexes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= for table <- @tables do %>
+          <tr>
+            <td>{table}</td>
+            <td>{number_with_delimiter(@row_counts[table])}</td>
+            <td>
+              <ul>
+                <%= for i3 <- Enum.sort_by(@indexes_by_table[table] || [], fn i -> {if(i[:primary], do: 0, else: 1), i[:columns]} end) do %>
+                  <li>
+                    {Enum.join(i3[:columns] || [], ", ")}
+                    {if i3[:using] && i3[:using] != "btree",
+                      do: String.upcase(to_string(i3[:using]))}
+                    <%= cond do %>
+                      <% i3[:primary] -> %>
+                        PRIMARY
+                      <% i3[:unique] -> %>
+                        UNIQUE
+                      <% true -> %>
+                    <% end %>
+                  </li>
+                <% end %>
+              </ul>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</div>

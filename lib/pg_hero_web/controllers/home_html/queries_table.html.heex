@@ -1,0 +1,123 @@
+<table class="table queries-table">
+  <%= unless assigns[:xhr] do %>
+    <thead>
+      <tr>
+        <th class="width-33">
+          <%= if assigns[:sort_headers] do %>
+            <a
+              href={
+                pg_path(
+                  @conn,
+                  "queries",
+                  Map.merge(@link_options || %{}, %{sort: nil, user: @user})
+                )
+              }
+              data-sort=""
+            >Total Time</a>
+          <% else %>
+            Total Time
+          <% end %>
+        </th>
+        <th class="width-33">
+          <%= if assigns[:sort_headers] do %>
+            <a
+              href={
+                pg_path(
+                  @conn,
+                  "queries",
+                  Map.merge(@link_options || %{}, %{sort: "average_time", user: @user})
+                )
+              }
+              data-sort="average_time"
+            >Average Time</a>
+          <% else %>
+            Average Time
+          <% end %>
+        </th>
+        <th class="width-33">
+          <%= if assigns[:sort_headers] do %>
+            <a
+              href={
+                pg_path(
+                  @conn,
+                  "queries",
+                  Map.merge(@link_options || %{}, %{sort: "calls", user: @user})
+                )
+              }
+              data-sort="calls"
+            >Calls</a>
+          <% else %>
+            Calls
+          <% end %>
+        </th>
+      </tr>
+    </thead>
+  <% end %>
+  <tbody id="queries">
+    <%= if @queries == [] do %>
+      <tr>
+        <td colspan="3">
+          <p class="queries-info text-muted">
+            {if assigns[:xhr], do: "No data available for this time.", else: "..."}
+          </p>
+        </td>
+      </tr>
+    <% end %>
+    <%= for query <- @queries do %>
+      <tr>
+        <td>
+          {number_with_delimiter(round((query[:total_time] || 0) / 1000 / 60))} min
+          <span class="percent">
+            <% percent = query[:total_percent] || 0 %>
+            <%= cond do %>
+              <% percent > 1 -> %>
+                {round(percent)}%
+              <% percent > 0.1 -> %>
+                {Float.round(percent, 1)}%
+              <% true -> %>
+                &lt; 0.1%
+            <% end %>
+          </span>
+        </td>
+        <td>{number_with_delimiter(round(query[:average_time] || 0))} ms</td>
+        <td>
+          {number_with_delimiter(query[:calls])}
+          <span class="user">
+            <%= if query[:user] do %>
+              <%= if assigns[:link_user] do %>
+                <a href={
+                  pg_path(
+                    @conn,
+                    "queries",
+                    Map.merge(@link_options || %{}, %{user: query[:user]})
+                  )
+                }>{query[:user]}</a>
+              <% else %>
+                {query[:user]}
+              <% end %>
+            <% end %>
+            <%= if assigns[:show_details] && query[:query_hash] do %>
+              ·
+              <a
+                href={
+                  pg_path(@conn, ["queries", query_hash_hex(query[:query_hash])], %{
+                    user: query[:user],
+                    v: 2
+                  })
+                }
+                target="_blank"
+              >
+                details
+              </a>
+            <% end %>
+          </span>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="3" class="query-row">
+          <pre><code class="query-code language-pgsql"><%= query[:query] %></code></pre>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

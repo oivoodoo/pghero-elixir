@@ -1,0 +1,42 @@
+<div class="content">
+  <h1>Explain</h1>
+
+  <form action={pg_path(@conn, "explain")} method="post">
+    <input :if={token = csrf_token(@conn)} type="hidden" name="_csrf_token" value={token} />
+    <div class="field">
+      <textarea name="query" placeholder="Enter a SQL query"><%= @query %></textarea>
+    </div>
+    <p>
+      <button class="btn btn-info right-5" type="submit" name="commit" value="Explain">Explain</button>
+      <%= if @explain_analyze_enabled do %>
+        <button class="btn btn-danger right-5" type="submit" name="commit" value="Analyze">Analyze</button>
+      <% end %>
+      <button class="btn btn-danger" type="submit" name="commit" value="Visualize">Visualize</button>
+    </p>
+  </form>
+
+  <%= if @explanation do %>
+    <%= if @visualize do %>
+      <p>
+        Paste the output below into the
+        <a href={PgHero.config().visualize_url} target="_blank">explain visualizer</a>
+      </p>
+      <button id="copy" class="btn btn-info hide">Copy</button>
+    <% end %>
+    <pre><code id="explanation"><%= @explanation %></code></pre>
+    <%= unless @visualize do %>
+      <p>
+        <a
+          href="https://www.postgresql.org/docs/current/static/using-explain.html"
+          target="_blank"
+        >
+          See how to interpret this
+        </a>
+      </p>
+    <% end %>
+  <% else %>
+    <%= if @error do %>
+      <div class="alert alert-danger">{@error}</div>
+    <% end %>
+  <% end %>
+</div>

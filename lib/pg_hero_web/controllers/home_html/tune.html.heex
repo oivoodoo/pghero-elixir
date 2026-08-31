@@ -1,0 +1,56 @@
+<div class="content">
+  <h1>Tune</h1>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Setting</th>
+        <th class="width-20">Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <%= for {setting, value} <- @settings do %>
+        <tr>
+          <td>{setting}</td>
+          <td>{value}</td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <% version =
+    @database |> PgHero.Database.server_version() |> to_string() |> String.split(" ") |> hd() %>
+  <p>
+    Check out <a href="https://pgtune.leopard.in.ua/" target="_blank">PgTune</a>
+    for recommendations. DB version is {version}.
+  </p>
+</div>
+
+<%= if @autovacuum_settings do %>
+  <div class="content">
+    <h1>Autovacuum</h1>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Setting</th>
+          <th class="width-20">Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= for {setting, value} <- @autovacuum_settings do %>
+          <tr>
+            <td>{setting}</td>
+            <td>
+              {value}
+              <%= if setting == :autovacuum_vacuum_cost_limit && value == "-1" do %>
+                <span class="text-muted">{PgHero.Database.vacuum_settings(@database)[
+                  :vacuum_cost_limit
+                ]}</span>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

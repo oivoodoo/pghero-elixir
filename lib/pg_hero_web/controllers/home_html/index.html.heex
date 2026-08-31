@@ -1,0 +1,430 @@
+<div id="status">
+  <%= if @replica do %>
+    <div class={"alert alert-#{if @good_replication_lag, do: "success", else: "warning"}"}>
+      <%= cond do %>
+        <% is_nil(@replication_lag) -> %>
+          Replication lag not supported
+        <% @good_replication_lag -> %>
+          Healthy replication lag
+          <span class="tiny">{number_with_delimiter(round(@replication_lag * 1000))} ms</span>
+        <% true -> %>
+          High replication lag
+          <span class="tiny">{number_with_delimiter(round(@replication_lag * 1000))} ms</span>
+      <% end %>
+    </div>
+  <% else %>
+    <%= if @inactive_replication_slots != [] do %>
+      <div class="alert alert-warning">
+        {pluralize(length(@inactive_replication_slots), "inactive replication slot")}
+      </div>
+    <% end %>
+  <% end %>
+
+  <div class={"alert alert-#{if @long_running_queries == [], do: "success", else: "warning"}"}>
+    <%= if @long_running_queries != [] do %>
+      {pluralize(length(@long_running_queries), "long running query")}
+    <% else %>
+      No long running queries
+    <% end %>
+    <%= if @autovacuum_queries != [] do %>
+      <span class="tiny">{length(@autovacuum_queries)} autovacuum</span>
+    <% end %>
+    <%= if @walsender_queries != [] do %>
+      <span class="tiny">{length(@walsender_queries)} walsender</span>
+    <% end %>
+  </div>
+
+  <%= if @extended do %>
+    <div class={"alert alert-#{if @good_cache_rate, do: "success", else: "warning"}"}>
+      <%= if @good_cache_rate do %>
+        Cache hit rate above {@database |> PgHero.Database.cache_hit_rate_threshold()}%
+      <% else %>
+        Low cache hit rate
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class={"alert alert-#{if @good_total_connections && @good_idle_connections, do: "success", else: "warning"}"}>
+    <%= cond do %>
+      <% not @good_total_connections -> %>
+        High number of connections <span class="tiny">{@total_connections}</span>
+      <% not @good_idle_connections -> %>
+        High number of connections idle in transaction
+        <span class="tiny">{@idle_connections}</span>
+      <% true -> %>
+        Connections healthy <span class="tiny">{@total_connections}</span>
+    <% end %>
+  </div>
+
+  <div class={"alert alert-#{if @transaction_id_danger == [], do: "success", else: "warning"}"}>
+    <%= if @transaction_id_danger != [] do %>
+      {pluralize(length(@transaction_id_danger), "table")} not vacuuming properly
+    <% else %>
+      Vacuuming healthy
+    <% end %>
+  </div>
+
+  <div class={"alert alert-#{if @sequence_danger == [] && !@sequences_timeout, do: "success", else: "warning"}"}>
+    <%= cond do %>
+      <% @sequence_danger != [] -> %>
+        {pluralize(length(@sequence_danger), "column")} approaching overflow
+      <% @sequences_timeout -> %>
+        Sequences not available (system catalog locked)
+      <% true -> %>
+        No columns near integer overflow
+    <% end %>
+  </div>
+
+  <div class={"alert alert-#{if @invalid_indexes == [] && @invalid_constraints == [], do: "success", else: "warning"}"}>
+    <%= cond do %>
+      <% @invalid_indexes == [] && @invalid_constraints == [] -> %>
+        No invalid indexes or constraints
+      <% true -> %>
+        <%= if @invalid_indexes != [] do %>
+          {pluralize(length(@invalid_indexes), "invalid index", "invalid indexes")}
+        <% end %>
+        <%= if @invalid_constraints != [] do %>
+          {if @invalid_indexes != [], do: "and"}
+          {pluralize(length(@invalid_constraints), "invalid constraint", "invalid constraints")}
+        <% end %>
+    <% end %>
+  </div>
+
+  <div class={"alert alert-#{if @duplicate_indexes == [], do: "success", else: "warning"}"}>
+    <%= if @duplicate_indexes != [] do %>
+      {pluralize(length(@duplicate_indexes), "duplicate index", "duplicate indexes")}
+    <% else %>
+      No duplicate indexes
+    <% end %>
+  </div>
+
+  <div class={"alert alert-#{if @query_stats_enabled && @slow_queries == [], do: "success", else: "warning"}"}>
+    <%= cond do %>
+      <% not @query_stats_enabled -> %>
+        Query stats must be enabled for slow queries
+      <% @slow_queries != [] -> %>
+        {pluralize(length(@slow_queries), "slow query")}
+      <% true -> %>
+        No slow queries
+    <% end %>
+  </div>
+
+  <%= if @extended do %>
+    <div class={"alert alert-#{if @unused_indexes == [], do: "success", else: "warning"}"}>
+      <%= if @unused_indexes != [] do %>
+        {pluralize(length(@unused_indexes), "unused index", "unused indexes")}
+      <% else %>
+        No unused indexes
+      <% end %>
+    </div>
+  <% end %>
+</div>
+
+<%= if @inactive_replication_slots != [] do %>
+  <div class="content">
+    <h1>Inactive Replication Slots</h1>
+    <p>Inactive replication slots can cause a lot of disk space to be consumed.</p>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Name</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= for slot <- @inactive_replication_slots do %>
+          <tr>
+            <td>{slot[:slot_name]}</td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+
+<%= if @long_running_queries != [] do %>
+  <div class="content">
+    <%= if @kill_enabled do %>
+      <form action={pg_path(@conn, "kill_long_running_queries")} method="post" class="push-right">
+        <input :if={token = csrf_token(@conn)} type="hidden" name="_csrf_token" value={token} />
+        <button class="btn btn-danger" type="submit">Kill All</button>
+      </form>
+    <% end %>
+    <h1>Long Running Queries</h1>
+    <p>We recommend setting a statement timeout on all non-superusers with:</p>
+    <pre><code class="language-pgsql">ALTER ROLE &lt;user&gt; SET statement_timeout TO '60s';</code></pre>
+    <.live_queries_table
+      conn={@conn}
+      queries={@long_running_queries}
+      vacuum_progress={%{}}
+      kill_enabled={@kill_enabled}
+      explain_enabled={@explain_enabled}
+    />
+  </div>
+<% end %>
+
+<%= if @extended && !@good_cache_rate do %>
+  <div class="content">
+    <h1>Low Cache Hit Rate</h1>
+    <p>
+      Index Hit Rate: {Float.round((@index_hit_rate || 0) * 100, 1)}% <br />
+      Table Hit Rate: {Float.round((@table_hit_rate || 0) * 100, 1)}%
+    </p>
+  </div>
+<% end %>
+
+<%= if not @good_total_connections do %>
+  <div class="content">
+    <h1>High Number of Connections</h1>
+    <p>{pluralize(@total_connections, "connection")}</p>
+    <p>
+      <a
+        href="https://www.craigkerstiens.com/2014/05/22/postgres-and-connection-pooling/"
+        target="_blank"
+      >
+        Use connection pooling
+      </a>
+      for better performance.
+    </p>
+    <.connections_table connection_sources={
+      Enum.take(PgHero.Database.connection_sources(@database), 10)
+    } />
+  </div>
+<% end %>
+
+<%= if not @good_idle_connections do %>
+  <div class="content">
+    <h1>High Number of Connections Idle in Transaction</h1>
+    <p>{pluralize(@idle_connections, "connection")} idle in transaction</p>
+    <p>
+      <a href={pg_path(@conn, "live_queries", %{"state" => "idle in transaction"})}>View queries</a>
+    </p>
+  </div>
+<% end %>
+
+<%= if @transaction_id_danger != [] do %>
+  <div class="content">
+    <h2>Vacuuming Needed</h2>
+    <p>
+      The database <strong>will shutdown</strong>
+      when there are fewer than 1,000,000 transactions left.
+    </p>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Table</th>
+          <th class="width-20">Transactions Left</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= for query <- @transaction_id_danger do %>
+          <tr>
+            <td>
+              {query[:table]}
+              <%= if query[:schema] != "public" do %>
+                <span class="text-muted">{query[:schema]}</span>
+              <% end %>
+            </td>
+            <td>{number_with_delimiter(query[:transactions_left])}</td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+
+<%= if @sequence_danger != [] do %>
+  <div class="content">
+    <h2>Columns Near Overflow</h2>
+    <p>Consider changing columns to bigint to support a larger range of values.</p>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Column</th>
+          <th class="width-20">Type</th>
+          <th class="width-20">Values Left</th>
+          <th class="width-10">% Left</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= for query <- Enum.sort_by(@sequence_danger, fn s -> {s[:table], s[:column]} end) do %>
+          <tr>
+            <td>
+              {query[:table]}.{query[:column]}
+              <%= if query[:table_schema] != "public" do %>
+                <span class="text-muted">{query[:table_schema]}</span>
+              <% end %>
+            </td>
+            <td>{query[:column_type]}</td>
+            <td>{number_with_delimiter(query[:max_value] - query[:last_value])}</td>
+            <td>
+              {:erlang.float_to_binary(
+                (query[:max_value] - query[:last_value]) * 100.0 / query[:max_value],
+                decimals: 2
+              )}%
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+
+<%= if @invalid_indexes != [] do %>
+  <div class="content">
+    <h1>Invalid Indexes</h1>
+    <p>These indexes exist, but can’t be used. You should recreate them.</p>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Name</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= for index <- @invalid_indexes do %>
+          <tr>
+            <td>
+              {index[:name]}
+              <%= if index[:schema] != "public" do %>
+                <span class="text-muted">{index[:schema]}</span>
+              <% end %>
+            </td>
+          </tr>
+          <tr>
+            <td class="query-row">
+              <pre><code class="language-pgsql">DROP INDEX CONCURRENTLY <%= pretty_ident(index[:name], index[:schema]) %>;
+<%= index[:definition] && String.replace(index[:definition], "CREATE INDEX ", "CREATE INDEX CONCURRENTLY ") %>;</code></pre>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+
+<%= if @invalid_constraints != [] do %>
+  <div class="content">
+    <h1>Invalid Constraints</h1>
+    <p>These constraints are marked as <code>NOT VALID</code>. You should validate them.</p>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Name</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= for constraint <- @invalid_constraints do %>
+          <tr>
+            <td>
+              {constraint[:name]}
+              <%= if constraint[:schema] != "public" do %>
+                <span class="text-muted">{constraint[:schema]}</span>
+              <% end %>
+            </td>
+          </tr>
+          <tr>
+            <td class="query-row">
+              <pre><code class="language-pgsql">ALTER TABLE <%= pretty_ident(constraint[:table], constraint[:schema]) %> VALIDATE CONSTRAINT <%= pretty_ident(constraint[:name]) %>;</code></pre>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+
+<%= if @duplicate_indexes != [] do %>
+  <div class="content">
+    <h1>Duplicate Indexes</h1>
+    <p>
+      These indexes exist, but aren’t needed. Remove them
+      <%= if @show_migrations do %>
+        <a href="#" class="migration-link">with a migration</a>
+      <% end %>
+      for faster writes.
+    </p>
+    <div class="migration">
+      <pre><code>mix ecto.gen.migration remove_unneeded_indexes</code></pre>
+      <p>And paste</p>
+      <pre><code><%= Enum.map_join(@duplicate_indexes, "\n", fn q -> remove_index(q[:unneeded_index]) end) %></code></pre>
+    </div>
+    <table class="table duplicate-indexes">
+      <thead>
+        <tr>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= for index <- @duplicate_indexes do %>
+          <% unneeded = index[:unneeded_index] %>
+          <% covering = index[:covering_index] %>
+          <tr>
+            <td>
+              On {unneeded[:table]}
+              <pre><%= unneeded[:name] %> (<%= Enum.join(unneeded[:columns] || [], ", ") %>)</pre> is covered by <pre><%= covering[:name] %> (<%= Enum.join(covering[:columns] || [], ", ") %>)</pre>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+
+<%= if not @query_stats_enabled do %>
+  <div class="content">
+    <h1>Query Stats</h1>
+    <%= if @query_stats_available && !@query_stats_extension_enabled do %>
+      <p>
+        Query stats are available but not enabled.
+        <form action={pg_path(@conn, "enable_query_stats")} method="post" class="button_to">
+          <input :if={token = csrf_token(@conn)} type="hidden" name="_csrf_token" value={token} />
+          <button class="btn btn-info" type="submit">Enable</button>
+        </form>
+      </p>
+    <% else %>
+      <p>Make them available by adding the following line to <code>postgresql.conf</code>:</p>
+      <pre><code>shared_preload_libraries = 'pg_stat_statements'</code></pre>
+      <p>Restart the server for the changes to take effect.</p>
+    <% end %>
+  </div>
+<% end %>
+
+<%= if @query_stats_enabled && @slow_queries != [] do %>
+  <div class="content">
+    <h1>Slow Queries</h1>
+    <p>
+      Slow queries take {PgHero.Database.slow_query_ms(@database)} ms or more on average
+      and have been called at least {PgHero.Database.slow_query_calls(@database)} times.
+    </p>
+    <p><a href={pg_path(@conn, "explain")}>Explain queries</a> to see where to add indexes.</p>
+    <.queries_table queries={@slow_queries} conn={@conn} />
+  </div>
+<% end %>
+
+<%= if @extended && @unused_indexes != [] do %>
+  <div class="content">
+    <h1>Unused Indexes</h1>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th class="width-20">Index Size</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= for query <- @unused_indexes do %>
+          <tr>
+            <td>
+              {query[:index]}
+              <div class="text-muted">on {query[:table]}</div>
+            </td>
+            <td>{query[:size]}</td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+
+<script>
+  highlightQueries();
+</script>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>
+      {if length(@databases) > 1, do: "#{@database.name} / "}{@title || "PgHero"}
+    </title>
+    <meta charset="utf-8" />
+    <link rel="icon" href={pg_asset_path(@conn, "favicon.png")} />
+    <link rel="stylesheet" href={pg_asset_path(@conn, "application.css")} />
+    <script src={pg_asset_path(@conn, "nouislider.js")}>
+    </script>
+    <script src={pg_asset_path(@conn, "Chart.bundle.js")}>
+    </script>
+    <script src={pg_asset_path(@conn, "chartkick.js")}>
+    </script>
+    <script src={pg_asset_path(@conn, "highlight.min.js")}>
+    </script>
+    <script src={pg_asset_path(@conn, "application.js")}>
+    </script>
+  </head>
+  <body>
+    <div class="container">
+      <% flash = assigns[:flash] || %{} %>
+      <div class={"alert alert-#{if Phoenix.Flash.get(flash, :error), do: "danger", else: "info"}"}>
+        <%= cond do %>
+          <% msg = Phoenix.Flash.get(flash, :error) -> %>
+            {msg}
+          <% msg = Phoenix.Flash.get(flash, :info) -> %>
+            {msg}
+          <% true -> %>
+            <a href={pg_path(@conn, "/")}>PgHero</a>
+        <% end %>
+      </div>
+
+      <div class="grid">
+        <div class="col-3-12">
+          <%= if length(@databases) > 1 do %>
+            <p class="nav-header">{@database.name}</p>
+          <% end %>
+
+          <ul class="nav">
+            <li class={active_class(@conn, :index)}>
+              <a href={pg_path(@conn, "/")}>Overview</a>
+            </li>
+            <%= if @query_stats_enabled do %>
+              <li class={active_class(@conn, :queries)}>
+                <a href={pg_path(@conn, "queries")}>Queries</a>
+              </li>
+            <% end %>
+            <li class={active_class(@conn, :space)}>
+              <a href={pg_path(@conn, "space")}>Space</a>
+            </li>
+            <li class={active_class(@conn, :connections)}>
+              <a href={pg_path(@conn, "connections")}>Connections</a>
+            </li>
+            <li class={active_class(@conn, :live_queries)}>
+              <a href={pg_path(@conn, "live_queries")}>Live Queries</a>
+            </li>
+            <%= unless @replica do %>
+              <li class={active_class(@conn, :maintenance)}>
+                <a href={pg_path(@conn, "maintenance")}>Maintenance</a>
+              </li>
+            <% end %>
+            <%= if @explain_enabled do %>
+              <li class={active_class(@conn, :explain)}>
+                <a href={pg_path(@conn, "explain")}>Explain</a>
+              </li>
+            <% end %>
+            <li class={active_class(@conn, :tune)}>
+              <a href={pg_path(@conn, "tune")}>Tune</a>
+            </li>
+          </ul>
+
+          <%= if length(@databases) > 1 do %>
+            <p class="nav-header">Databases</p>
+            <ul class="nav">
+              <%= for database <- @databases do %>
+                <li class={if @database.id == database.id, do: "active-database"}>
+                  <a href={Path.join(@pghero_prefix, database.id)}>{database.name}</a>
+                </li>
+              <% end %>
+            </ul>
+          <% end %>
+        </div>
+
+        <div class="col-9-12">
+          {@inner_content}
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
