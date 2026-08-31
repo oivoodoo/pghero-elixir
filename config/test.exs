@@ -7,3 +7,7 @@ config :pghero, PgHero.TestEndpoint,
   live_view: [signing_salt: "pgherotest"]
 
 config :logger, level: :warning
+
+# Tests start their own Postgrex clients. CI sets DATABASE_URL, which would
+# otherwise start a named pool in PgHero.Application and collide with setup.
+config :pghero, start_connections: false

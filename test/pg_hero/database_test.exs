@@ -2,16 +2,19 @@ defmodule PgHero.DatabaseTest do
   use ExUnit.Case, async: false
 
   @moduletag :integration
+  @moduletag skip: PgHero.Integration.skip_reason()
 
   setup do
-    url = System.fetch_env!("DATABASE_URL")
+    url = PgHero.Integration.url()
     Application.put_env(:pghero, :url, url)
     Application.delete_env(:pghero, :repo)
     Application.delete_env(:pghero, :databases)
 
     start_supervised!(
       {Postgrex,
-       Keyword.merge(postgrex_opts(url), name: PgHero.Config.connection_name("primary"))}
+       Keyword.merge(PgHero.Integration.postgrex_opts(url),
+         name: PgHero.Config.connection_name("primary")
+       )}
     )
 
     {:ok, database: PgHero.database("primary")}
@@ -28,9 +31,10 @@ defmodule PgHero.DatabaseTest do
   end
 
   test "reports relation sizes", %{database: db} do
+    PgHero.Query.execute(db, "CREATE TABLE IF NOT EXISTS pghero_size_test (id integer)")
     sizes = PgHero.Database.relation_sizes(db)
-    assert is_list(sizes)
-    assert hd(sizes)[:size]
+    assert Enum.any?(sizes, fn row -> row[:relation] == "pghero_size_test" end)
+    assert Enum.all?(sizes, fn row -> is_binary(row[:size]) and is_integer(row[:size_bytes]) end)
   end
 
   test "reads settings", %{database: db} do
@@ -53,28 +57,6 @@ defmodule PgHero.DatabaseTest do
   test "rejects unsafe explain statements", %{database: db} do
     assert_raise Postgrex.Error, fn ->
       PgHero.Database.explain(db, "SELECT 1; SELECT 2")
-    end
-  end
-
-  defp postgrex_opts(url) do
-    uri = URI.parse(url)
-    {user, password} = userinfo(uri)
-
-    [
-      hostname: uri.host || "localhost",
-      port: uri.port || 5432,
-      username: user || "postgres",
-      password: password || "postgres",
-      database: String.trim_leading(uri.path || "/postgres", "/")
-    ]
-  end
-
-  defp userinfo(%URI{userinfo: nil}), do: {nil, nil}
-
-  defp userinfo(%URI{userinfo: userinfo}) do
-    case String.split(userinfo, ":", parts: 2) do
-      [user] -> {user, nil}
-      [user, password] -> {user, password}
     end
   end
 end

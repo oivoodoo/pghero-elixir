@@ -16,9 +16,17 @@ defmodule PgHero.Application do
       System.halt(1)
     end
 
-    children = PgHero.Config.connection_children() ++ PgHero.Standalone.children()
+    children = connection_children() ++ PgHero.Standalone.children()
     opts = [strategy: :one_for_one, name: PgHero.Supervisor]
     Supervisor.start_link(children, opts)
+  end
+
+  defp connection_children do
+    if Application.get_env(:pghero, :start_connections, true) do
+      PgHero.Config.connection_children()
+    else
+      []
+    end
   end
 
   defp standalone? do

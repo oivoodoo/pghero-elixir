@@ -1,10 +1,18 @@
 defmodule PgHeroWeb.RouterMacroTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   test "unconfigured dashboard returns a 500" do
+    previous = Application.get_all_env(:pghero)
+
+    on_exit(fn ->
+      for {key, _} <- Application.get_all_env(:pghero), do: Application.delete_env(:pghero, key)
+      for {key, value} <- previous, do: Application.put_env(:pghero, key, value)
+    end)
+
+    # An empty :databases map wins over DATABASE_URL from CI.
+    Application.put_env(:pghero, :databases, %{})
     Application.delete_env(:pghero, :repo)
     Application.delete_env(:pghero, :url)
-    Application.delete_env(:pghero, :databases)
 
     unless Process.whereis(PgHero.TestEndpoint) do
       start_supervised!(PgHero.TestEndpoint)

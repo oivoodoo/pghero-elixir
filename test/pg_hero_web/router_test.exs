@@ -2,16 +2,19 @@ defmodule PgHeroWeb.RouterTest do
   use PgHeroWeb.ConnCase, async: false
 
   @moduletag :integration
+  @moduletag skip: PgHero.Integration.skip_reason()
 
   setup do
-    url = System.fetch_env!("DATABASE_URL")
+    url = PgHero.Integration.url()
     Application.put_env(:pghero, :url, url)
     Application.delete_env(:pghero, :repo)
     Application.delete_env(:pghero, :databases)
 
     start_supervised!(
       {Postgrex,
-       Keyword.merge(postgrex_opts(url), name: PgHero.Config.connection_name("primary"))}
+       Keyword.merge(PgHero.Integration.postgrex_opts(url),
+         name: PgHero.Config.connection_name("primary")
+       )}
     )
 
     unless Process.whereis(PgHero.TestEndpoint) do
@@ -52,27 +55,5 @@ defmodule PgHeroWeb.RouterTest do
   test "explains a query", %{conn: conn} do
     conn = post(conn, "/pghero/explain", %{"query" => "SELECT 1", "commit" => "Explain"})
     assert html_response(conn, 200) =~ "Explain"
-  end
-
-  defp postgrex_opts(url) do
-    uri = URI.parse(url)
-    {user, password} = userinfo(uri)
-
-    [
-      hostname: uri.host || "localhost",
-      port: uri.port || 5432,
-      username: user || "postgres",
-      password: password || "postgres",
-      database: String.trim_leading(uri.path || "/postgres", "/")
-    ]
-  end
-
-  defp userinfo(%URI{userinfo: nil}), do: {nil, nil}
-
-  defp userinfo(%URI{userinfo: userinfo}) do
-    case String.split(userinfo, ":", parts: 2) do
-      [user] -> {user, nil}
-      [user, password] -> {user, password}
-    end
   end
 end

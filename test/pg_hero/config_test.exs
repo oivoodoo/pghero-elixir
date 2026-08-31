@@ -3,6 +3,8 @@ defmodule PgHero.ConfigTest do
 
   setup do
     original = Application.get_all_env(:pghero)
+    original_database_url = System.get_env("DATABASE_URL")
+    original_pghero_url = System.get_env("PGHERO_DATABASE_URL")
 
     on_exit(fn ->
       for {key, _} <- Application.get_all_env(:pghero) do
@@ -12,6 +14,9 @@ defmodule PgHero.ConfigTest do
       for {key, value} <- original do
         Application.put_env(:pghero, key, value)
       end
+
+      restore_env("DATABASE_URL", original_database_url)
+      restore_env("PGHERO_DATABASE_URL", original_pghero_url)
     end)
 
     :ok
@@ -32,8 +37,6 @@ defmodule PgHero.ConfigTest do
     Application.delete_env(:pghero, :url)
     Application.delete_env(:pghero, :databases)
     System.put_env("DATABASE_URL", "postgres://app:secret@db.internal:5432/app_prod")
-
-    on_exit(fn -> System.delete_env("DATABASE_URL") end)
 
     assert %{primary: cfg} = PgHero.Config.get().databases
     assert cfg[:url] == "postgres://app:secret@db.internal:5432/app_prod"
@@ -70,4 +73,7 @@ defmodule PgHero.ConfigTest do
     refute PgHero.explain_enabled?()
     refute PgHero.kill_enabled?()
   end
+
+  defp restore_env(name, nil), do: System.delete_env(name)
+  defp restore_env(name, value), do: System.put_env(name, value)
 end

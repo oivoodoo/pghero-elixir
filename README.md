@@ -180,8 +180,10 @@ Use a dedicated Postgres role. See [guides/Permissions.md](guides/Permissions.md
 ```sh
 mix deps.get
 mix test
-DATABASE_URL=postgres://postgres:postgres@localhost/pghero_test mix test
+just all-tests
 ```
+
+`just all-tests` starts Postgres (via `dummy/docker-compose.yml`), creates `pghero_test`, and runs unit plus integration tests.
 
 ## License
 
