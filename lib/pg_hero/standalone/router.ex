@@ -13,6 +13,6 @@ defmodule PgHero.Standalone.Router do
 
   scope "/" do
     pipe_through :browser
-    pghero "/"
+    pghero("/")
   end
 end
