@@ -8,7 +8,10 @@ defmodule PgHeroWeb.Plugs.Dashboard do
   def call(conn, opts) do
     mount_path = normalize_path(opts[:mount_path] || "/pghero")
 
-    conn = assign(conn, :pghero_prefix, mount_path)
+    conn =
+      conn
+      |> assign(:pghero_mount_path, mount_path)
+      |> assign(:pghero_prefix, prefix_from_conn(conn, mount_path))
 
     if asset_request?(conn) do
       Plug.Conn.put_private(conn, :plug_skip_csrf_protection, true)
@@ -100,7 +103,7 @@ defmodule PgHeroWeb.Plugs.Dashboard do
 
   defp maybe_redirect_multi_db(%{assigns: %{database: nil, databases: [first | _]}} = conn) do
     prefix = conn.assigns.pghero_prefix
-    rest = conn.path_info |> extra_path(conn.assigns.pghero_prefix) |> Enum.join("/")
+    rest = extra_path(conn.path_info, conn.assigns.pghero_mount_path) |> Enum.join("/")
     target = Path.join([prefix, first.id, rest]) |> String.replace(~r{/+}, "/")
     target = if conn.query_string == "", do: target, else: target <> "?" <> conn.query_string
 
@@ -148,11 +151,50 @@ defmodule PgHeroWeb.Plugs.Dashboard do
     |> assign(:show_migrations, PgHero.config().show_migrations)
   end
 
-  defp extra_path(path_info, prefix) do
-    prefix_parts = prefix |> String.trim("/") |> String.split("/", trim: true)
+  @doc false
+  def prefix_from_conn(conn, mount_path) do
+    mount_parts = String.split(mount_path || "", "/", trim: true)
+    full_path = conn.script_name ++ conn.path_info
 
-    path_info
-    |> Enum.drop(length(prefix_parts))
+    prefix_parts =
+      case mount_parts do
+        [] ->
+          conn.script_name
+
+        _ ->
+          case find_subsequence(full_path, mount_parts) do
+            nil -> conn.script_name ++ mount_parts
+            idx -> Enum.take(full_path, idx + length(mount_parts))
+          end
+      end
+
+    case prefix_parts do
+      [] -> ""
+      parts -> "/" <> Enum.join(parts, "/")
+    end
+  end
+
+  defp extra_path(path_info, mount_path) do
+    mount_parts = String.split(mount_path || "", "/", trim: true)
+
+    case find_subsequence(path_info, mount_parts) do
+      nil -> path_info
+      idx -> Enum.drop(path_info, idx + length(mount_parts))
+    end
+  end
+
+  defp find_subsequence(_list, []), do: 0
+
+  defp find_subsequence(list, sub) do
+    last = length(list) - length(sub)
+
+    if last < 0 do
+      nil
+    else
+      Enum.find_value(0..last, fn i ->
+        if Enum.slice(list, i, length(sub)) == sub, do: i
+      end)
+    end
   end
 
   defp normalize_path("/"), do: ""

@@ -27,4 +27,13 @@ defmodule PgHeroWeb.HelpersTest do
     assert Helpers.format_duration_ms(1500) == "1.5 s"
     assert Helpers.format_duration_ms(90_000) == "00:01:30"
   end
+
+  test "pg_asset_path/2 uses the assigned prefix" do
+    conn = %Plug.Conn{assigns: %{pghero_prefix: "/dev/internal/pghero"}}
+
+    assert Helpers.pg_asset_path(conn, "application.css") ==
+             "/dev/internal/pghero/assets/application.css"
+
+    assert Helpers.pg_path(conn, "queries") == "/dev/internal/pghero/queries"
+  end
 end

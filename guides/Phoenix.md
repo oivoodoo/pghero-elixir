@@ -29,6 +29,17 @@ scope "/" do
 end
 ```
 
+Parent scopes are included in generated URLs. This serves the dashboard at `/dev/internal/pghero`:
+
+```elixir
+scope "/dev" do
+  scope "/internal" do
+    pipe_through [:browser, :require_admin]
+    pghero "/pghero"
+  end
+end
+```
+
 The host `:browser` pipeline should include `:fetch_session`, `:fetch_flash` or `:fetch_live_flash`, and `:protect_from_forgery`.
 
 ## Authentication

@@ -14,6 +14,13 @@ defmodule PgHero.TestRouter do
     pipe_through :browser
     pghero("/pghero")
   end
+
+  scope "/dev" do
+    scope "/internal" do
+      pipe_through :browser
+      pghero("/pghero")
+    end
+  end
 end
 
 defmodule PgHero.TestEndpoint do

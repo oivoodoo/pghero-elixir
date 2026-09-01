@@ -52,6 +52,14 @@ defmodule PgHeroWeb.RouterTest do
     assert response(conn, 200) =~ ".btn-danger"
   end
 
+  test "nested mount HTML points at nested asset URLs", %{conn: conn} do
+    conn = get(conn, "/dev/internal/pghero")
+    html = html_response(conn, 200)
+    assert html =~ "/dev/internal/pghero/assets/application.css"
+    assert html =~ "/dev/internal/pghero/assets/application.js"
+    refute html =~ "href=\"/pghero/assets/"
+  end
+
   test "explains a query", %{conn: conn} do
     conn = post(conn, "/pghero/explain", %{"query" => "SELECT 1", "commit" => "Explain"})
     assert html_response(conn, 200) =~ "Explain"

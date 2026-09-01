@@ -14,8 +14,12 @@ defmodule PgHeroWeb.Router do
     routes = page_routes()
 
     quote bind_quoted: [path: path, opts: opts], unquote: true do
+      # Include parent Phoenix scopes so asset/nav URLs match the real mount
+      # (e.g. scope "/dev" + pghero("/pghero") => "/dev/pghero").
+      mount_path = Phoenix.Router.scoped_path(__MODULE__, path)
+
       pipeline_name =
-        path
+        mount_path
         |> String.trim("/")
         |> String.replace(~r/[^A-Za-z0-9_]/, "_")
         |> then(&:"pghero_#{&1}")
@@ -23,7 +27,7 @@ defmodule PgHeroWeb.Router do
       pipeline pipeline_name do
         plug :put_root_layout, false
         plug :put_layout, html: {PgHeroWeb.Layouts, :app}
-        plug PgHeroWeb.Plugs.Dashboard, Keyword.put(opts, :mount_path, path)
+        plug PgHeroWeb.Plugs.Dashboard, Keyword.put(opts, :mount_path, mount_path)
       end
 
       scope path, alias: false, as: false do

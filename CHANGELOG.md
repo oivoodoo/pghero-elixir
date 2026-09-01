@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Build asset and navigation URLs from the full Phoenix scope path so a nested mount such as `scope "/dev"` + `pghero("/pghero")` serves `/dev/pghero/assets/...` instead of `/pghero/assets/...`.
+
 ## 0.1.0
 
 Elixir/Phoenix port of [PgHero](https://github.com/ankane/pghero) 4.0.1.

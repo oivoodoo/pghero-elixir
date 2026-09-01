@@ -25,10 +25,14 @@ defmodule PgHeroWeb.AssetController do
       content_type ->
         path = Application.app_dir(:pghero, "priv/static/#{file}")
 
-        conn
-        |> put_resp_content_type(content_type)
-        |> put_resp_header("cache-control", "public, max-age=86400")
-        |> send_file(200, path)
+        if File.exists?(path) do
+          conn
+          |> put_resp_content_type(content_type)
+          |> put_resp_header("cache-control", "public, max-age=86400")
+          |> send_file(200, path)
+        else
+          send_resp(conn, 404, "Not found")
+        end
     end
   end
 end
