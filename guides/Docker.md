@@ -67,4 +67,4 @@ docker run --rm -ti -e DATABASE_URL=... -e PGHERO_SERVER=true pghero \
 
 ## Permissions
 
-Use a dedicated Postgres role. See [Permissions.md](Permissions.md).
+Use a dedicated Postgres role. See [guides/Permissions.md](guides/Permissions.md).

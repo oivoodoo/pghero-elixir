@@ -26,7 +26,7 @@ Add to `mix.exs`:
 ```elixir
 def deps do
   [
-    {:pghero, "~> 0.1.0"}
+    {:pghero, "~> 0.1.1"}
   ]
 end
 ```
@@ -119,7 +119,7 @@ Enable `pg_stat_statements` in `postgresql.conf`:
 shared_preload_libraries = 'pg_stat_statements'
 ```
 
-Restart Postgres, then enable the extension from the Overview page (or `CREATE EXTENSION pg_stat_statements`).
+Restart Postgres, then enable the extension from the Overview page (or `CREATE EXTENSION pg_stat_statements`). See [guides/Query-Stats.md](guides/Query-Stats.md) for RDS notes and troubleshooting.
 
 ## Historical stats
 

@@ -1,7 +1,7 @@
 defmodule PgHero.MixProject do
   use Mix.Project
 
-  @version "0.1.0"
+  @version "0.1.1"
   @source_url "https://github.com/oivoodoo/pghero-elixir"
 
   def project do
@@ -72,7 +72,17 @@ defmodule PgHero.MixProject do
   defp docs do
     [
       main: "readme",
-      extras: ["README.md", "CHANGELOG.md", "guides/Phoenix.md", "guides/Docker.md"],
+      extras: [
+        "README.md",
+        "CHANGELOG.md",
+        "guides/Phoenix.md",
+        "guides/Docker.md",
+        "guides/Permissions.md",
+        "guides/Query-Stats.md"
+      ],
+      groups_for_extras: [
+        Guides: ~r{guides/}
+      ],
       source_ref: "v#{@version}",
       source_url: @source_url
     ]

@@ -57,90 +57,98 @@ defmodule PgHero.Database do
     db.config[:index_bloat_bytes] || PgHero.config().index_bloat_bytes
   end
 
-  defdelegate ssl_used?(db), to: Basic
-  defdelegate database_name(db), to: Basic
-  defdelegate current_user(db), to: Basic
-  defdelegate server_version(db), to: Basic
-  defdelegate server_version_num(db), to: Basic
+  # Wrappers instead of defdelegate so ExDoc does not emit "See
+  # PgHero.Methods.* which is hidden" warnings for the internal method modules.
+  def ssl_used?(db), do: Basic.ssl_used?(db)
+  def database_name(db), do: Basic.database_name(db)
+  def current_user(db), do: Basic.current_user(db)
+  def server_version(db), do: Basic.server_version(db)
+  def server_version_num(db), do: Basic.server_version_num(db)
 
-  defdelegate connections(db), to: Connections
-  defdelegate total_connections(db), to: Connections
-  defdelegate connection_states(db), to: Connections
-  defdelegate connection_sources(db), to: Connections
+  def connections(db), do: Connections.connections(db)
+  def total_connections(db), do: Connections.total_connections(db)
+  def connection_states(db), do: Connections.connection_states(db)
+  def connection_sources(db), do: Connections.connection_sources(db)
 
-  defdelegate invalid_constraints(db), to: Constraints
+  def invalid_constraints(db), do: Constraints.invalid_constraints(db)
 
-  defdelegate explain(db, sql, opts \\ []), to: Explain
+  def explain(db, sql, opts \\ []), do: Explain.explain(db, sql, opts)
 
-  defdelegate index_hit_rate(db), to: Indexes
-  defdelegate index_caching(db), to: Indexes
-  defdelegate index_usage(db), to: Indexes
-  defdelegate missing_indexes(db), to: Indexes
-  defdelegate unused_indexes(db, opts \\ []), to: Indexes
-  defdelegate reset_stats(db), to: Indexes
-  defdelegate last_stats_reset_time(db), to: Indexes
-  defdelegate invalid_indexes(db, opts \\ []), to: Indexes
-  defdelegate indexes(db), to: Indexes
-  defdelegate duplicate_indexes(db, opts \\ []), to: Indexes
-  defdelegate index_bloat(db, opts \\ []), to: Indexes
+  def index_hit_rate(db), do: Indexes.index_hit_rate(db)
+  def index_caching(db), do: Indexes.index_caching(db)
+  def index_usage(db), do: Indexes.index_usage(db)
+  def missing_indexes(db), do: Indexes.missing_indexes(db)
+  def unused_indexes(db, opts \\ []), do: Indexes.unused_indexes(db, opts)
+  def reset_stats(db), do: Indexes.reset_stats(db)
+  def last_stats_reset_time(db), do: Indexes.last_stats_reset_time(db)
+  def invalid_indexes(db, opts \\ []), do: Indexes.invalid_indexes(db, opts)
+  def indexes(db), do: Indexes.indexes(db)
+  def duplicate_indexes(db, opts \\ []), do: Indexes.duplicate_indexes(db, opts)
+  def index_bloat(db, opts \\ []), do: Indexes.index_bloat(db, opts)
 
-  defdelegate kill(db, pid), to: Kill
-  defdelegate kill_long_running_queries(db, opts \\ []), to: Kill
-  defdelegate kill_all(db), to: Kill
+  def kill(db, pid), do: Kill.kill(db, pid)
+  def kill_long_running_queries(db, opts \\ []), do: Kill.kill_long_running_queries(db, opts)
+  def kill_all(db), do: Kill.kill_all(db)
 
-  defdelegate transaction_id_danger(db, opts \\ []), to: Maintenance
-  defdelegate autovacuum_danger(db), to: Maintenance
-  defdelegate vacuum_progress(db), to: Maintenance
-  defdelegate maintenance_info(db), to: Maintenance
-  defdelegate analyze(db, table, opts \\ []), to: Maintenance
-  defdelegate analyze_tables(db, opts \\ []), to: Maintenance
+  def transaction_id_danger(db, opts \\ []), do: Maintenance.transaction_id_danger(db, opts)
+  def autovacuum_danger(db), do: Maintenance.autovacuum_danger(db)
+  def vacuum_progress(db), do: Maintenance.vacuum_progress(db)
+  def maintenance_info(db), do: Maintenance.maintenance_info(db)
+  def analyze(db, table, opts \\ []), do: Maintenance.analyze(db, table, opts)
+  def analyze_tables(db, opts \\ []), do: Maintenance.analyze_tables(db, opts)
 
-  defdelegate running_queries(db, opts \\ []), to: Queries
-  defdelegate long_running_queries(db), to: Queries
-  defdelegate blocked_queries(db), to: Queries
+  def running_queries(db, opts \\ []), do: Queries.running_queries(db, opts)
+  def long_running_queries(db), do: Queries.long_running_queries(db)
+  def blocked_queries(db), do: Queries.blocked_queries(db)
 
-  defdelegate query_stats(db, opts \\ []), to: QueryStats
-  defdelegate query_stats_available?(db), to: QueryStats
-  defdelegate query_stats_enabled?(db), to: QueryStats
-  defdelegate query_stats_extension_enabled?(db), to: QueryStats
-  defdelegate query_stats_readable?(db), to: QueryStats
-  defdelegate enable_query_stats(db), to: QueryStats
-  defdelegate disable_query_stats(db), to: QueryStats
-  defdelegate reset_query_stats(db, opts \\ []), to: QueryStats
-  defdelegate historical_query_stats_enabled?(db), to: QueryStats
-  defdelegate queries_table_exists?(db), to: QueryStats
-  defdelegate query_stats_table_exists?(db), to: QueryStats
-  defdelegate capture_query_stats(db, opts \\ []), to: QueryStats
-  defdelegate clean_query_stats(db, opts \\ []), to: QueryStats
-  defdelegate slow_queries(db, opts \\ []), to: QueryStats
-  defdelegate query_hash_stats(db, query_hash, opts \\ []), to: QueryStats
-  defdelegate explainable?(db, query), to: QueryStats
+  def query_stats(db, opts \\ []), do: QueryStats.query_stats(db, opts)
+  def query_stats_available?(db), do: QueryStats.query_stats_available?(db)
+  def query_stats_enabled?(db), do: QueryStats.query_stats_enabled?(db)
+  def query_stats_extension_enabled?(db), do: QueryStats.query_stats_extension_enabled?(db)
+  def query_stats_readable?(db), do: QueryStats.query_stats_readable?(db)
+  def enable_query_stats(db), do: QueryStats.enable_query_stats(db)
+  def disable_query_stats(db), do: QueryStats.disable_query_stats(db)
+  def reset_query_stats(db, opts \\ []), do: QueryStats.reset_query_stats(db, opts)
+  def historical_query_stats_enabled?(db), do: QueryStats.historical_query_stats_enabled?(db)
+  def queries_table_exists?(db), do: QueryStats.queries_table_exists?(db)
+  def query_stats_table_exists?(db), do: QueryStats.query_stats_table_exists?(db)
+  def capture_query_stats(db, opts \\ []), do: QueryStats.capture_query_stats(db, opts)
+  def clean_query_stats(db, opts \\ []), do: QueryStats.clean_query_stats(db, opts)
+  def slow_queries(db, opts \\ []), do: QueryStats.slow_queries(db, opts)
 
-  defdelegate replica?(db), to: Replication
-  defdelegate replication_lag(db), to: Replication
-  defdelegate replication_slots(db), to: Replication
-  defdelegate replicating?(db), to: Replication
+  def query_hash_stats(db, query_hash, opts \\ []),
+    do: QueryStats.query_hash_stats(db, query_hash, opts)
 
-  defdelegate sequences(db), to: Sequences
-  defdelegate sequence_danger(db, opts \\ []), to: Sequences
+  def explainable?(db, query), do: QueryStats.explainable?(db, query)
 
-  defdelegate settings(db), to: Settings
-  defdelegate autovacuum_settings(db), to: Settings
-  defdelegate vacuum_settings(db), to: Settings
+  def replica?(db), do: Replication.replica?(db)
+  def replication_lag(db), do: Replication.replication_lag(db)
+  def replication_slots(db), do: Replication.replication_slots(db)
+  def replicating?(db), do: Replication.replicating?(db)
 
-  defdelegate database_size(db), to: Space
-  defdelegate relation_sizes(db), to: Space
-  defdelegate table_sizes(db), to: Space
-  defdelegate space_growth(db, opts \\ []), to: Space
-  defdelegate relation_space_stats(db, relation, opts \\ []), to: Space
-  defdelegate capture_space_stats(db), to: Space
-  defdelegate clean_space_stats(db, opts \\ []), to: Space
-  defdelegate space_stats_enabled?(db), to: Space
+  def sequences(db), do: Sequences.sequences(db)
+  def sequence_danger(db, opts \\ []), do: Sequences.sequence_danger(db, opts)
 
-  defdelegate table_hit_rate(db), to: Tables
-  defdelegate table_caching(db), to: Tables
-  defdelegate unused_tables(db), to: Tables
-  defdelegate table_stats(db, opts \\ []), to: Tables
+  def settings(db), do: Settings.settings(db)
+  def autovacuum_settings(db), do: Settings.autovacuum_settings(db)
+  def vacuum_settings(db), do: Settings.vacuum_settings(db)
+
+  def database_size(db), do: Space.database_size(db)
+  def relation_sizes(db), do: Space.relation_sizes(db)
+  def table_sizes(db), do: Space.table_sizes(db)
+  def space_growth(db, opts \\ []), do: Space.space_growth(db, opts)
+
+  def relation_space_stats(db, relation, opts \\ []),
+    do: Space.relation_space_stats(db, relation, opts)
+
+  def capture_space_stats(db), do: Space.capture_space_stats(db)
+  def clean_space_stats(db, opts \\ []), do: Space.clean_space_stats(db, opts)
+  def space_stats_enabled?(db), do: Space.space_stats_enabled?(db)
+
+  def table_hit_rate(db), do: Tables.table_hit_rate(db)
+  def table_caching(db), do: Tables.table_caching(db)
+  def unused_tables(db), do: Tables.unused_tables(db)
+  def table_stats(db, opts \\ []), do: Tables.table_stats(db, opts)
 
   def suggested_indexes_enabled?(_db), do: false
   def suggested_indexes(_db, _opts \\ []), do: []

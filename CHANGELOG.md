@@ -2,7 +2,11 @@
 
 ## Unreleased
 
+## 0.1.1
+
 - Build asset and navigation URLs from the full Phoenix scope path so a nested mount such as `scope "/dev"` + `pghero("/pghero")` serves `/dev/pghero/assets/...` instead of `/pghero/assets/...`.
+- Include Permissions and Query Stats guides in Hex/ExDoc extras so README and Docker links resolve.
+- Document `PgHero.Database` helpers without pointing ExDoc at hidden `PgHero.Methods.*` modules.
 
 ## 0.1.0
 
