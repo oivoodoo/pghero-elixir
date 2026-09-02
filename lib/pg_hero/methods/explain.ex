@@ -25,12 +25,12 @@ defmodule PgHero.Methods.Explain do
         db = %{db | conn: conn}
 
         if unsafe_statement?(sql) and not explain_safe?(db) do
-          raise Postgrex.Error,
-            message: "Unsafe statement",
-            postgres: %{code: :syntax_error, message: "Unsafe statement"}
+          raise Postgrex.Error, message: "Unsafe statement"
         end
 
-        result = execute(db, "EXPLAIN #{wrapped}")
+        # Simple query protocol so $1/$2 placeholders from pg_stat_statements
+        # are sent to Postgres instead of being bound by Postgrex.
+        result = execute(db, "EXPLAIN #{wrapped}", [], query_type: :text)
         Enum.map_join(result.rows, "\n", fn [plan | _] -> plan end)
       end,
       statement_timeout: timeout_ms,
@@ -44,7 +44,7 @@ defmodule PgHero.Methods.Explain do
   end
 
   defp explain_safe?(db) do
-    execute(db, "SELECT 1; SELECT 1")
+    execute(db, "SELECT 1; SELECT 1", [], query_type: :text)
     false
   rescue
     _ in Postgrex.Error -> true

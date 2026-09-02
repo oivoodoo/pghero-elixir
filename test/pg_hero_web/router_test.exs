@@ -64,4 +64,19 @@ defmodule PgHeroWeb.RouterTest do
     conn = post(conn, "/pghero/explain", %{"query" => "SELECT 1", "commit" => "Explain"})
     assert html_response(conn, 200) =~ "Explain"
   end
+
+  test "explains a parameterized query without crashing", %{conn: conn} do
+    sql = """
+    SELECT relname FROM pg_class
+    WHERE relname = $1 AND relnamespace = $2 AND relkind = $3
+    """
+
+    conn = post(conn, "/pghero/explain", %{"query" => sql, "commit" => "Explain"})
+    body = html_response(conn, 200)
+
+    assert body =~ "Explain"
+    refute body =~ "ArgumentError"
+    refute body =~ "parameters must be of length"
+    assert body =~ "pg_class" or body =~ "Can't explain queries with bind parameters"
+  end
 end

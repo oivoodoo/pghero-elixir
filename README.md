@@ -26,7 +26,7 @@ Add to `mix.exs`:
 ```elixir
 def deps do
   [
-    {:pghero, "~> 0.1.1"}
+    {:pghero, "~> 0.1.2"}
   ]
 end
 ```

@@ -549,33 +549,35 @@ defmodule PgHeroWeb.HomeController do
       {explanation, nil, visualize?, nil}
     end
   rescue
-    e in Postgrex.Error ->
-      message = Exception.message(e)
+    e in [Postgrex.Error, ArgumentError] ->
+      {nil, nil, false, explain_error_message(e)}
+  end
 
-      error =
-        cond do
-          message == "Unsafe statement" or String.contains?(message, "Unsafe statement") ->
-            "Unsafe statement"
+  defp explain_error_message(e) do
+    message = Exception.message(e)
 
-          String.contains?(message, "undefined_parameter") or
-              String.contains?(message, "UndefinedParameter") ->
-            "Can't explain queries with bind parameters"
+    cond do
+      message == "Unsafe statement" or String.contains?(message, "Unsafe statement") ->
+        "Unsafe statement"
 
-          String.contains?(message, "GENERIC_PLAN") ->
-            "Can't analyze queries with bind parameters"
+      String.contains?(message, "undefined_parameter") or
+        String.contains?(message, "UndefinedParameter") or
+          String.contains?(message, "parameters must be of length") ->
+        "Can't explain queries with bind parameters"
 
-          String.contains?(message, "syntax error") or String.contains?(message, "SyntaxError") ->
-            "Syntax error with query"
+      String.contains?(message, "GENERIC_PLAN") ->
+        "Can't analyze queries with bind parameters"
 
-          String.contains?(message, "query_canceled") or
-              String.contains?(message, "QueryCanceled") ->
-            "Query timed out"
+      String.contains?(message, "syntax error") or String.contains?(message, "SyntaxError") ->
+        "Syntax error with query"
 
-          true ->
-            "Error explaining query"
-        end
+      String.contains?(message, "query_canceled") or
+          String.contains?(message, "QueryCanceled") ->
+        "Query timed out"
 
-      {nil, nil, false, error}
+      true ->
+        "Error explaining query"
+    end
   end
 
   defp tag_ssl(connections) do

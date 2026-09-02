@@ -55,8 +55,97 @@ defmodule PgHero.DatabaseTest do
   end
 
   test "rejects unsafe explain statements", %{database: db} do
-    assert_raise Postgrex.Error, fn ->
-      PgHero.Database.explain(db, "SELECT 1; SELECT 2")
+    error =
+      assert_raise Postgrex.Error, fn ->
+        PgHero.Database.explain(db, "SELECT 1; SELECT 2")
+      end
+
+    assert Exception.message(error) =~ "Unsafe statement"
+  end
+
+  test "explains parameterized queries without ArgumentError", %{database: db} do
+    sql = ~s[SELECT relname FROM pg_class WHERE relname = $1]
+
+    result =
+      try do
+        opts =
+          if PgHero.Database.server_version_num(db) >= 160_000,
+            do: [generic_plan: true],
+            else: []
+
+        {:ok, PgHero.Database.explain(db, sql, opts)}
+      rescue
+        e in ArgumentError -> {:argument_error, Exception.message(e)}
+        e in Postgrex.Error -> {:postgrex_error, Exception.message(e)}
+      end
+
+    refute match?({:argument_error, _}, result),
+           "EXPLAIN with $1 must not raise ArgumentError, got: #{inspect(result)}"
+
+    if PgHero.Database.server_version_num(db) >= 160_000 do
+      assert {:ok, plan} = result
+      assert is_binary(plan)
+      assert plan =~ "pg_class"
+    else
+      assert {:postgrex_error, message} = result
+      assert message =~ "parameter"
+    end
+  end
+
+  test "explains queries with multiple bind parameters", %{database: db} do
+    sql = """
+    SELECT relname FROM pg_class
+    WHERE relname = $1 AND relnamespace = $2 AND relkind = $3
+    """
+
+    if PgHero.Database.server_version_num(db) >= 160_000 do
+      plan = PgHero.Database.explain(db, sql, generic_plan: true)
+      assert is_binary(plan)
+      assert plan =~ "pg_class"
+    else
+      assert_raise Postgrex.Error, fn ->
+        PgHero.Database.explain(db, sql)
+      end
+    end
+  end
+
+  test "explains joins with jsonb operators and bind params", %{database: db} do
+    PgHero.Query.execute(db, """
+    CREATE TABLE IF NOT EXISTS pghero_explain_parents (
+      id uuid PRIMARY KEY,
+      owner_id uuid,
+      meta jsonb
+    )
+    """)
+
+    PgHero.Query.execute(db, """
+    CREATE TABLE IF NOT EXISTS pghero_explain_children (
+      id uuid PRIMARY KEY,
+      payload jsonb,
+      parent_name text,
+      parent_id uuid REFERENCES pghero_explain_parents(id),
+      inserted_at timestamp,
+      updated_at timestamp
+    )
+    """)
+
+    sql = """
+    SELECT c."id", c."payload", c."parent_name", c."parent_id",
+           c."inserted_at", c."updated_at"
+    FROM "pghero_explain_children" AS c
+    INNER JOIN "pghero_explain_parents" AS p ON c."parent_id" = p."id"
+    WHERE (((c."parent_name" = $1) AND (p."owner_id" = $2))
+       AND p."meta" ->> 'group_id' = $3)
+    """
+
+    if PgHero.Database.server_version_num(db) >= 160_000 do
+      plan = PgHero.Database.explain(db, sql, generic_plan: true)
+      assert is_binary(plan)
+      assert plan =~ "pghero_explain_children"
+    else
+      assert_raise Postgrex.Error, fn ->
+        PgHero.Database.explain(db, sql)
+      end
     end
   end
 end

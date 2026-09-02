@@ -106,32 +106,31 @@ defmodule PgHero.Query do
   def unquote_ident(part), do: part
 
   defp run(db, sql, params, opts) do
-    retries = 0
-    do_run(conn_spec(db, opts), sql, params, retries)
+    do_run(conn_spec(db, opts), sql, params, 0, Keyword.take(opts, [:query_type]))
   end
 
-  defp do_run(spec, sql, params, retries) do
-    query!(spec, sql, params)
+  defp do_run(spec, sql, params, retries, query_opts) do
+    query!(spec, sql, params, query_opts)
   rescue
     e in Postgrex.Error ->
       message = Exception.message(e)
 
       if String.contains?(message, "internal error") and retries < 2 do
         Process.sleep(100)
-        do_run(spec, sql, params, retries + 1)
+        do_run(spec, sql, params, retries + 1, query_opts)
       else
         reraise e, __STACKTRACE__
       end
   end
 
-  defp query!(spec, sql, params \\ [])
+  defp query!(spec, sql, params \\ [], opts \\ [])
 
-  defp query!({:repo, repo}, sql, params) do
-    Ecto.Adapters.SQL.query!(repo, sql, params)
+  defp query!({:repo, repo}, sql, params, opts) do
+    Ecto.Adapters.SQL.query!(repo, sql, params, opts)
   end
 
-  defp query!({:pid, pid}, sql, params) do
-    Postgrex.query!(pid, sql, params)
+  defp query!({:pid, pid}, sql, params, opts) do
+    Postgrex.query!(pid, sql, params, opts)
   end
 
   defp rollback({:repo, repo}, result), do: repo.rollback(result)
