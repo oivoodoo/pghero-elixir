@@ -7,7 +7,7 @@ Add PgHero to `mix.exs`:
 ```elixir
 def deps do
   [
-    {:pghero, "~> 0.1.2"}
+    {:pghero, "~> 0.1.3"}
   ]
 end
 ```

@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.2
+## 0.1.3
 
 - Fix `ArgumentError` when explaining queries with `$1` bind placeholders (pg_stat_statements). EXPLAIN now uses Postgrex's simple query protocol so Postgres can apply `GENERIC_PLAN` instead of Postgrex trying to bind parameters.
 
